@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>motion-scan</Name>
+  <Repository>motion-scan:latest</Repository>
+  <Registry/>
+  <Network>bridge</Network>
+  <MyIP/>
+  <MyMAC/>
+  <Shell>bash</Shell>
+  <Privileged>false</Privileged>
+  <Support/>
+  <Project/>
+  <ReadMe/>
+  <Overview>Scans a folder of security-camera MKV/MP4 files and classifies each one as "motion" or "no_motion" by sampling frames and measuring frame-to-frame pixel difference, so you can review/delete the no-motion clips. This is a one-shot batch job, not a persistent service: hit Start, watch the log, it exits when done and writes a CSV back into the video folder. &#13;
+&#13;
+NOTE: There is no public registry image -- build it locally on this Unraid box first, from the motion-scan-tools folder: `docker build -f Dockerfile.qsv -t motion-scan:latest .` -- then install this template. &#13;
+&#13;
+MODE=dense uses hardware-accelerated decode (HWACCEL: qsv/vaapi/cuda/none) sampled at FPS. MODE=fast is CPU-only and decodes only keyframes -- much faster, no GPU/device needed, good as a first pass or if /dev/dri isn't cooperating. For QuickSync on Arrow Lake/Meteor Lake etc., try HWACCEL=qsv first, fall back to HWACCEL=vaapi if it errors.</Overview>
+  <Category>Tools:Utilities</Category>
+  <WebUI/>
+  <TemplateURL/>
+  <Icon/>
+  <ExtraParams/>
+  <PostArgs/>
+  <CPUset/>
+  <DonateText/>
+  <DonateLink/>
+  <Requires>Build the image locally first (see Overview) -- no registry to pull from.</Requires>
+  <Config Name="Videos Folder" Target="/videos" Default="/mnt/user/your-videos" Mode="rw" Description="Folder of MKV/MP4 files to scan. The results CSV is written back into this same folder." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/your-videos</Config>
+  <Config Name="/dev/dri (QuickSync)" Target="/dev/dri/" Default="" Mode="" Description="Intel iGPU render node, needed for HWACCEL=qsv or HWACCEL=vaapi. Not needed for MODE=fast or HWACCEL=none/cuda." Type="Device" Display="always" Required="false" Mask="false">/dev/dri/</Config>
+  <Config Name="Mode" Target="MODE" Default="dense" Mode="" Description="'dense' = hardware-decoded, sampled at FPS (higher fidelity, needs HWACCEL). 'fast' = CPU-only, keyframes only (much faster, no GPU needed)." Type="Variable" Display="always" Required="true" Mask="false">dense</Config>
+  <Config Name="Hardware Accel" Target="HWACCEL" Default="qsv" Mode="" Description="Only used when MODE=dense: qsv (Intel QuickSync via oneVPL), vaapi (Intel QuickSync via VA-API, fallback if qsv errors), cuda (NVIDIA NVDEC), or none (software)." Type="Variable" Display="always" Required="true" Mask="false">qsv</Config>
+  <Config Name="Workers" Target="WORKERS" Default="6" Mode="" Description="Concurrent ffmpeg processes. QSV/VAAPI/CPU can go fairly high; consumer NVIDIA GPUs cap concurrent NVDEC sessions (~3-5) if you ever use HWACCEL=cuda here." Type="Variable" Display="always" Required="true" Mask="false">6</Config>
+  <Config Name="Sample FPS" Target="FPS" Default="2.0" Mode="" Description="Frames/sec sampled in dense mode. Higher = more accurate motion detection, slower." Type="Variable" Display="advanced" Required="false" Mask="false">2.0</Config>
+  <Config Name="Diff Threshold" Target="DIFF_THRESHOLD" Default="2.0" Mode="" Description="Mean abs pixel diff (0-255 grayscale) that counts a sampled frame pair as 'changed'. Raise if camera sensor noise causes false 'motion' classifications." Type="Variable" Display="advanced" Required="false" Mask="false">2.0</Config>
+  <Config Name="Motion Fraction Threshold" Target="FRAC_THRESHOLD" Default="0.02" Mode="" Description="Fraction of changed frame pairs needed to classify a file as 'motion' rather than 'no_motion'." Type="Variable" Display="advanced" Required="false" Mask="false">0.02</Config>
+  <Config Name="Scale Width" Target="SCALE_W" Default="160" Mode="" Description="Downscale width used for frame-diffing. Smaller = faster." Type="Variable" Display="advanced" Required="false" Mask="false">160</Config>
+  <Config Name="Scale Height" Target="SCALE_H" Default="90" Mode="" Description="Downscale height used for frame-diffing." Type="Variable" Display="advanced" Required="false" Mask="false">90</Config>
+  <Config Name="Extensions" Target="EXTENSIONS" Default="mkv,mp4" Mode="" Description="Comma-separated file extensions to scan." Type="Variable" Display="advanced" Required="false" Mask="false">mkv,mp4</Config>
+  <Config Name="Recursive" Target="RECURSIVE" Default="true" Mode="" Description="Scan subfolders of the Videos Folder too." Type="Variable" Display="advanced" Required="false" Mask="false">true</Config>
+  <Config Name="Per-file Timeout (sec)" Target="TIMEOUT" Default="600" Mode="" Description="Kill and mark 'error' if a single file's ffmpeg pass takes longer than this." Type="Variable" Display="advanced" Required="false" Mask="false">600</Config>
+  <Config Name="VA-API Device" Target="VAAPI_DEVICE" Default="/dev/dri/renderD128" Mode="" Description="Render node to use when HWACCEL=vaapi. List candidates with `ls /dev/dri` in the Unraid console if renderD128 isn't right." Type="Variable" Display="advanced" Required="false" Mask="false">/dev/dri/renderD128</Config>
+  <Config Name="Output CSV Filename" Target="OUT_FILE" Default="" Mode="" Description="Leave blank to auto-name (e.g. dense_results_qsv.csv). Written into the Videos Folder." Type="Variable" Display="advanced" Required="false" Mask="false"/>
+  <TailscaleStateDir/>
+</Container>

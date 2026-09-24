@@ -1,0 +1,2 @@
+rel_path,file,size_bytes,frames_sampled,mean_diff,max_diff,motion_fraction,classification,scan_seconds,error
+synthetic_motion.mp4,C:\Users\Parteek\Desktop\test\3\synthetic_motion.mp4,49462710,60,2.4869726930320155,2.8290972222222224,1.0,motion,0.34,

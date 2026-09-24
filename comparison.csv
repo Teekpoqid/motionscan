@@ -1,0 +1,9 @@
+rel_path,a_classification,b_classification,a_motion_fraction,b_motion_fraction,a_frames_sampled,b_frames_sampled,a_scan_seconds,b_scan_seconds
+1\2026-07-28T05-15-01.mp4,no_motion,no_motion,0.0,0.0,467,1798,2.93,50.14
+1\2026-07-28T05-30-00.mp4,no_motion,no_motion,0.0,0.0,468,1802,2.97,50.06
+1\2026-07-28T05-45-01.mp4,no_motion,no_motion,0.0,0.0,467,1798,2.96,50.11
+1\2026-07-28T06-00-00.mp4,no_motion,no_motion,0.0,0.0,468,1802,2.95,45.17
+2\2026-07-28T05-15-01.mp4,no_motion,no_motion,0.0,0.0,467,1798,2.95,45.13
+2\2026-07-28T05-30-00.mp4,no_motion,no_motion,0.0,0.0,468,1802,2.95,45.14
+2\2026-07-28T05-45-01.mp4,no_motion,no_motion,0.0,0.0,467,1798,2.93,30.39
+2\2026-07-28T06-00-00.mp4,no_motion,no_motion,0.0,0.0,468,1802,2.95,30.38

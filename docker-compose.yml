@@ -1,0 +1,76 @@
+# Motion scan, containerized. Pick the profile that matches the box you're running on:
+#   docker compose --profile cuda up          # 3090 box, NVDEC
+#   docker compose --profile qsv up           # Intel Ultra box, QuickSync via oneVPL
+#   docker compose --profile vaapi up         # Intel Ultra box, QuickSync via VA-API (fallback if qsv errors)
+#   docker compose --profile cpu up           # no GPU, software decode (also works anywhere, for comparison)
+#
+# All tunables come from environment variables -- copy .env.example to .env and edit,
+# or override inline: WORKERS=6 FPS=4 docker compose --profile qsv up
+#
+# cuda requires the NVIDIA Container Toolkit on the host; qsv/vaapi require /dev/dri
+# to exist and be passed through (bare-metal Linux, or WSL2 with iGPU passthrough).
+
+x-common: &common
+  build:
+    context: .
+    dockerfile: Dockerfile.qsv
+  image: motion-scan:latest
+  volumes:
+    - ${VIDEOS_HOST_PATH:?Set VIDEOS_HOST_PATH in .env to the folder of videos to scan}:/videos
+  environment: &common-env
+    VIDEOS_PATH: /videos
+    MODE: ${MODE:-dense}
+    FPS: ${FPS:-2.0}
+    SCALE_W: ${SCALE_W:-160}
+    SCALE_H: ${SCALE_H:-90}
+    DIFF_THRESHOLD: ${DIFF_THRESHOLD:-2.0}
+    FRAC_THRESHOLD: ${FRAC_THRESHOLD:-0.02}
+    TIMEOUT: ${TIMEOUT:-600}
+    EXTENSIONS: ${EXTENSIONS:-mkv,mp4}
+    RECURSIVE: ${RECURSIVE:-true}
+
+services:
+  motion-scan-cpu:
+    <<: *common
+    profiles: ["cpu"]
+    environment:
+      <<: *common-env
+      HWACCEL: none
+      WORKERS: ${WORKERS:-8}
+      OUT_FILE: ${OUT_FILE:-dense_results_cpu.csv}
+
+  motion-scan-cuda:
+    <<: *common
+    profiles: ["cuda"]
+    gpus: all
+    environment:
+      <<: *common-env
+      HWACCEL: cuda
+      WORKERS: ${WORKERS:-3}
+      OUT_FILE: ${OUT_FILE:-dense_results_cuda.csv}
+      # nvidia-container-toolkit only injects libnvcuvid (NVDEC) with 'video' capability;
+      # the default 'compute,utility' is enough for CUDA math but not hardware decode.
+      NVIDIA_DRIVER_CAPABILITIES: all
+
+  motion-scan-qsv:
+    <<: *common
+    profiles: ["qsv"]
+    devices:
+      - /dev/dri:/dev/dri
+    environment:
+      <<: *common-env
+      HWACCEL: qsv
+      WORKERS: ${WORKERS:-6}
+      OUT_FILE: ${OUT_FILE:-dense_results_qsv.csv}
+
+  motion-scan-vaapi:
+    <<: *common
+    profiles: ["vaapi"]
+    devices:
+      - /dev/dri:/dev/dri
+    environment:
+      <<: *common-env
+      HWACCEL: vaapi
+      VAAPI_DEVICE: ${VAAPI_DEVICE:-/dev/dri/renderD128}
+      WORKERS: ${WORKERS:-6}
+      OUT_FILE: ${OUT_FILE:-dense_results_vaapi.csv}
